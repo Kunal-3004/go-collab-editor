@@ -20,67 +20,80 @@
     </div>
 
     <script>
-        const ROOM_ID = "doc1";
-        let MY_ID = ""; 
-        let ws;
+    const ROOM_ID = "doc1";
+    let MY_ID = ""; 
+    let ws;
 
-        const editor = document.getElementById("editor");
-        const status = document.getElementById("status");
+    const editor = document.getElementById("editor");
+    const status = document.getElementById("status");
 
-        async function start() {
-            const randomUser = "User-" + Math.floor(Math.random() * 1000);
-            const response = await fetch(`/login?user=${randomUser}`);
-            const token = await response.text();
+    async function start() {
+        const randomUser = "User-" + Math.floor(Math.random() * 1000);
+        const response = await fetch(`/login?user=${randomUser}`); 
+        const token = await response.text();
+        
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const payload = JSON.parse(window.atob(base64));
+        MY_ID = payload.user_id;
+
+        connectWebSocket(token);
+    }
+
+    function connectWebSocket(token) {
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const host = window.location.host;
+        const WS_URL = `${protocol}//${host}/ws?room=${ROOM_ID}&token=${token}`;
+        
+        ws = new WebSocket(WS_URL);
+
+        ws.onopen = () => {
+            status.innerText = "Connected as " + MY_ID;
+            status.style.backgroundColor = "green";
+        };
+
+        ws.onmessage = (event) => {
+            const op = JSON.parse(event.data);
             
-            console.log("Got Token:", token);
+            if (op.clientId === MY_ID) return; 
 
-            const base64Url = token.split('.')[1];
-            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-            const payload = JSON.parse(window.atob(base64));
-            MY_ID = payload.user_id;
-            console.log("My Authenticated ID:", MY_ID);
-
-            connectWebSocket(token);
-        }
-
-        function connectWebSocket(token) {
-            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-            const host = window.location.host;
-    
-            const WS_URL = `${protocol}//${host}/ws?room=${ROOM_ID}&token=${token}`;
-            ws = new WebSocket(WS_URL);
-
-            ws.onopen = () => {
-                status.innerText = "Connected as " + MY_ID;
-                status.style.backgroundColor = "green";
-            };
-
-            ws.onmessage = (event) => {
-                const op = JSON.parse(event.data);
-                
-                if (op.clientId === MY_ID) return; 
-
-                if (op.type === "INSERT") {
-                    editor.value += op.value;
-                }
-            };
-        }
-
-        editor.addEventListener("input", (e) => {
-            if (e.inputType === "insertText" || e.inputType === "insertLineBreak") {
-                const char = e.data || "\n"; 
-                const op = {
-                    type: "INSERT",
-                    position: editor.value.length, 
-                    value: char,
-                };
-                if (ws && ws.readyState === WebSocket.OPEN) {
-                    ws.send(JSON.stringify(op));
-                }
+            if (op.type === "INSERT") {
+                const text = editor.value;
+                const pos = op.position;
+                editor.value = text.slice(0, pos) + op.value + text.slice(pos);
+            } 
+            else if (op.type === "DELETE") {
+                const text = editor.value;
+                const pos = op.position;
+                editor.value = text.slice(0, pos) + text.slice(pos + 1);
             }
-        });
+        };
+    }
 
-        start();
-    </script>
+    editor.addEventListener("input", (e) => {
+        if (!ws || ws.readyState !== WebSocket.OPEN) return;
+
+        if (e.inputType === "insertText" || e.inputType === "insertLineBreak") {
+            const char = e.data || "\n"; 
+            const op = {
+                type: "INSERT",
+                position: editor.selectionStart - 1, 
+                value: char
+            };
+            ws.send(JSON.stringify(op));
+        }
+        
+        else if (e.inputType === "deleteContentBackward") {
+            const op = {
+                type: "DELETE",
+                position: editor.selectionStart, 
+                value: ""
+            };
+            ws.send(JSON.stringify(op));
+        }
+    });
+
+    start();
+</script>
 </body>
 </html>
