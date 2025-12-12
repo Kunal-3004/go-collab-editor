@@ -1,0 +1,14 @@
+# Binaries (Executable files)
+/bin
+main
+main.exe
+go.mod
+go.sum
+*.exe
+
+# OS junk files
+.DS_Store
+
+# IDE Settings (VS Code folders)
+.vscode/
+.idea/
