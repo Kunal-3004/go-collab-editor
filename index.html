@@ -96,9 +96,12 @@
         #status { 
             font-size: 12px; 
             color: #666; 
+            background: transparent;
+            padding: 0;
             display: flex;
             align-items: center;
-            gap: 5px;
+            gap: 8px;
+            font-weight: 500;
         }
         #status::before {
             content: '';
@@ -107,8 +110,13 @@
             height: 8px;
             border-radius: 50%;
             background-color: #dc3545; 
+            transition: background-color 0.3s ease;
+            
         }
-        #status.connected::before { background-color: #28a745; } 
+        #status.connected::before {
+            background-color: #28a745; 
+            box-shadow: 0 0 5px #28a745;
+        }
 
         .btn-close { 
             padding: 8px 12px; 
