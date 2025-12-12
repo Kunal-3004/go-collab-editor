@@ -38,6 +38,7 @@ graph TD
     Service --> Repo
     Hub -.->|Broadcast Updates| ClientA
     Hub -.->|Broadcast Updates| ClientB
+```
 
 🚀 Features
 Real-time Synchronization: Uses WebSockets for low-latency, bi-directional communication.
