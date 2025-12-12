@@ -96,24 +96,26 @@
         #status { 
             font-size: 12px; 
             color: #666; 
-            background: transparent;
+            background: transparent !important;
             padding: 0;
             display: flex;
             align-items: center;
             gap: 8px;
             font-weight: 500;
         }
+
         #status::before {
             content: '';
             display: inline-block;
-            width: 8px;
-            height: 8px;
+            width: 10px;
+            height: 10px;
             border-radius: 50%;
+            background-color: #dc3545; 
             transition: background-color 0.3s ease;
-            
         }
         #status.connected::before {
-            box-shadow: 0 0 5px #28a745;
+            background-color: #28a745;
+            box-shadow: 0 0 5px #28a745; 
         }
 
         .btn-close { 
@@ -291,9 +293,8 @@
             appScreen.style.display = "none";
             loginScreen.style.display = "flex";
 
-
             status.innerText = "Disconnected";
-            status.style.backgroundColor = "#dc3545"; 
+            status.classList.remove("connected");
         }
 
         async function loadDocumentHistory(token) {
@@ -301,14 +302,20 @@
                 const res = await fetch(`/document?room=${ROOM_ID}&token=${token}`);
                 const doc = await res.json();
                 
-                if (doc.operations && doc.operations.length > 0) {
+                const ops = doc.operations || doc.Operations || [];
+
+                if (ops.length > 0) {
                     let fullText = "";
-                    for (const op of doc.operations) {
-                         if (op.type === "INSERT") {
-                             const pos = Math.min(op.position, fullText.length);
-                             fullText = fullText.slice(0, pos) + op.value + fullText.slice(pos);
-                         } else if (op.type === "DELETE") {
-                             const pos = Math.min(op.position, fullText.length);
+                    for (const op of ops) {
+                         const type = op.type || op.Type;
+                         const value = op.value || op.Value || "";
+                         const position = (op.position !== undefined) ? op.position : op.Position;
+
+                         if (type === "INSERT") {
+                             const pos = Math.min(position, fullText.length);
+                             fullText = fullText.slice(0, pos) + value + fullText.slice(pos);
+                         } else if (type === "DELETE") {
+                             const pos = Math.min(position, fullText.length);
                              fullText = fullText.slice(0, pos) + fullText.slice(pos + 1);
                          }
                     }
@@ -328,13 +335,13 @@
 
             ws.onopen = () => {
                 status.innerText = "Connected as " + MY_ID;
-                status.style.backgroundColor = "#28a745"; 
+                status.classList.add("connected");
             };
 
             ws.onclose = () => {
                 if (appScreen.style.display === "block") {
                     status.innerText = "Disconnected";
-                    status.style.backgroundColor = "#dc3545"; 
+                    status.classList.remove("connected");
                 }
             };
 
@@ -344,11 +351,13 @@
 
                 const text = editor.value;
                 const pos = Math.min(op.position, text.length);
+                const type = op.type || op.Type;
+                const value = op.value || op.Value || "";
 
-                if (op.type === "INSERT") {
-                    editor.value = text.slice(0, pos) + op.value + text.slice(pos);
+                if (type === "INSERT") {
+                    editor.value = text.slice(0, pos) + value + text.slice(pos);
                 } 
-                else if (op.type === "DELETE") {
+                else if (type === "DELETE") {
                     editor.value = text.slice(0, pos) + text.slice(pos + 1);
                 }
             };
