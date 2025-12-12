@@ -5,7 +5,7 @@
 ![Architecture](https://img.shields.io/badge/architecture-Clean-green)
 ![Status](https://img.shields.io/badge/status-Active-success)
 
-> A high-performance, concurrency-safe backend service that powers real-time collaborative editing (similar to Google Docs), built with **Go** and **WebSockets**.
+> A high-performance, concurrency-safe backend service that powers real-time collaborative editing (similar to Google Docs), built with **Go**, **WebSockets**, and **JWT Authentication**.
 
 ---
 
@@ -15,9 +15,10 @@ This project follows **Clean Architecture** principles to separate business logi
 
 ```mermaid
 graph TD
-    ClientA["User A (Frontend)"] <-->|WebSocket| Handler
-    ClientB["User B (Frontend)"] <-->|WebSocket| Handler
-    
+    Client["Client (Frontend)"] -->|1. Login Request| Auth[Auth Handler]
+    Auth -->|2. Returns JWT| Client
+    Client <-->|3. WebSocket w/ Token| Handler
+
     subgraph "Delivery Layer"
         Handler[WebSocket Handler]
         Hub[Connection Hub]
@@ -36,12 +37,11 @@ graph TD
     Hub --> Service
     Service --> Logic
     Service --> Repo
-    Hub -.->|Broadcast Updates| ClientA
-    Hub -.->|Broadcast Updates| ClientB
 ```
 
 ## 🚀 Features
 * **Real-time Synchronization:** Uses WebSockets for low-latency, bi-directional communication.
+* **Secure Authentication:** Uses JWT (JSON Web Tokens) to verify user identity before establishing a WebSocket connection.
 * **Concurrency Safe:** Implements sync.Mutex and Channels to handle multiple users editing the same document simultaneously without race conditions.
 * **Clean Architecture:** Code is modular (domain, usecase, repository, delivery), making it testable and scalable.
 * **Conflict Resolution:** (Basic) Handles operation merging to ensure eventual consistency.
@@ -93,12 +93,9 @@ You should see a message: Server started on :8000
 
 ## 🔮 Future Improvements
 * **[ ] Redis Integration:** Replace in-memory storage with Redis for persistence.
-
 * **[ ] Docker Support:** Add Dockerfile and docker-compose for easy deployment.
-
 * **[ ] Advanced Conflict Resolution:** Upgrade from basic logic to full CRDT (Conflict-free Replicated Data Types) using libraries like Yjs.
 
-* **[ ] User Auth:** Add JWT authentication to identify who is editing.
 
 
 <p align="center"> Made with ❤️ by <a href="https://www.google.com/search?q=https://github.com/Kunal-3004">Kunal</a> </p>
