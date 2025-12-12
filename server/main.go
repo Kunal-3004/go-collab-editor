@@ -6,15 +6,28 @@ import (
 	"collab-editor/internal/usecase"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 )
 
 func main() {
-	repo := repository.NewInMemoryRepo()
-	hub := websocket.NewHub()
+	// repo := repository.NewInMemoryRepo()
 
+	redisURL := os.Getenv("REDIS_URL")
+	if redisURL == "" {
+		redisURL = "redis://localhost:6379"
+	}
+
+	log.Println("Connecting to Redis...")
+	repo, err := repository.NewRedisRepo(redisURL)
+	if err != nil {
+		log.Fatal("Could not connect to Redis:", err)
+	}
+	log.Println("Connected to Redis successfully!")
+
+	hub := websocket.NewHub()
 	go hub.Run()
 
 	editorService := usecase.NewEditorService(repo, hub)
