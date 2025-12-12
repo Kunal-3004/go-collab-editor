@@ -77,13 +77,12 @@
             if (savedUser && savedRoom) {
                 document.getElementById("usernameInput").value = savedUser;
                 document.getElementById("roomInput").value = savedRoom;
-
+                
                 loginScreen.style.display = "none";
                 appScreen.style.display = "block";
 
                 handleLogin();
-            }
-            else{
+            } else {
                 loginScreen.style.display = "flex";
                 appScreen.style.display = "none";
             }
@@ -95,6 +94,8 @@
 
             if (!username || !room) {
                 alert("Please enter both Username and Room Name");
+                loginScreen.style.display = "flex";
+                appScreen.style.display = "none";
                 return;
             }
 
@@ -122,20 +123,32 @@
 
             } catch (err) {
                 console.error(err);
-                alert("Error logging in. Check console.");
+                alert("Login failed. Check server.");
                 closeRoom();
             }
         }
--
+
         function closeRoom() {
             localStorage.removeItem("collab_username");
             localStorage.removeItem("collab_room");
 
             if (ws) {
                 ws.close();
+                ws = null;
             }
 
-            location.reload();
+            ROOM_ID = "";
+            MY_ID = "";
+            editor.value = "";
+            document.getElementById("usernameInput").value = "";
+            document.getElementById("roomInput").value = "";
+
+            appScreen.style.display = "none";
+            loginScreen.style.display = "flex";
+
+
+            status.innerText = "Disconnected";
+            status.style.backgroundColor = "#dc3545"; 
         }
 
         async function loadDocumentHistory(token) {
@@ -174,8 +187,10 @@
             };
 
             ws.onclose = () => {
-                status.innerText = "Disconnected";
-                status.style.backgroundColor = "#dc3545"; 
+                if (appScreen.style.display === "block") {
+                    status.innerText = "Disconnected";
+                    status.style.backgroundColor = "#dc3545"; 
+                }
             };
 
             ws.onmessage = (event) => {
