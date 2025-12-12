@@ -317,6 +317,7 @@
                 const doc = await res.json();
                 
                 const ops = doc.operations || doc.Operations || [];
+                console.log("Found Operations:", ops.length); 
 
                 if (ops.length > 0) {
                     let fullText = "";
