@@ -19,8 +19,8 @@ type Operation struct {
 }
 
 type Document struct {
-	ID         string
-	Operations []Operation
+	ID         string      `json:"id"`
+	Operations []Operation `json:"operations"`
 }
 
 func NewDocument(id string) *Document {
