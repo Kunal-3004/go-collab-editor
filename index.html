@@ -222,6 +222,7 @@
         const editor = document.getElementById("editor");
         const status = document.getElementById("status");
         const displayRoom = document.getElementById("displayRoom");
+        const saveBtn = document.getElementById("saveBtn")
 
         window.onload = function() {
             const savedUser = localStorage.getItem("collab_username");
@@ -309,6 +310,7 @@
 
             status.innerText = "Disconnected";
             status.classList.remove("connected");
+            updateSaveButton();
         }
 
         async function loadDocumentHistory(token) {
