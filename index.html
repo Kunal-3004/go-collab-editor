@@ -20,31 +20,43 @@
     </div>
 
     <script>
-        const MY_ID = "user-" + Math.floor(Math.random() * 100000);
-        console.log("My Client ID:", MY_ID);
-
         const ROOM_ID = "doc1";
-        const WS_URL = `ws://localhost:8000/ws?room=${ROOM_ID}`;
-        
+        let MY_ID = ""; 
         let ws;
+
         const editor = document.getElementById("editor");
         const status = document.getElementById("status");
 
-        function connect() {
+        async function start() {
+            const randomUser = "User-" + Math.floor(Math.random() * 1000);
+            const response = await fetch(`http://localhost:8000/login?user=${randomUser}`);
+            const token = await response.text();
+            
+            console.log("Got Token:", token);
+
+            const base64Url = token.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const payload = JSON.parse(window.atob(base64));
+            MY_ID = payload.user_id;
+            console.log("My Authenticated ID:", MY_ID);
+
+            connectWebSocket(token);
+        }
+
+        function connectWebSocket(token) {
+            const WS_URL = `ws://localhost:8000/ws?room=${ROOM_ID}&token=${token}`;
             ws = new WebSocket(WS_URL);
 
             ws.onopen = () => {
-                status.innerText = "Connected";
+                status.innerText = "Connected as " + MY_ID;
                 status.style.backgroundColor = "green";
             };
 
             ws.onmessage = (event) => {
                 const op = JSON.parse(event.data);
                 
-                if (op.clientId === MY_ID) {
-                    return; 
-                }
-                
+                if (op.clientId === MY_ID) return; 
+
                 if (op.type === "INSERT") {
                     editor.value += op.value;
                 }
@@ -54,21 +66,18 @@
         editor.addEventListener("input", (e) => {
             if (e.inputType === "insertText" || e.inputType === "insertLineBreak") {
                 const char = e.data || "\n"; 
-                
                 const op = {
                     type: "INSERT",
                     position: editor.value.length, 
                     value: char,
-                    clientId: MY_ID
                 };
-
                 if (ws && ws.readyState === WebSocket.OPEN) {
                     ws.send(JSON.stringify(op));
                 }
             }
         });
 
-        connect();
+        start();
     </script>
 </body>
 </html>
