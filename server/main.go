@@ -4,6 +4,7 @@ import (
 	"collab-editor/internal/delivery/websocket"
 	"collab-editor/internal/repository"
 	"collab-editor/internal/usecase"
+	"encoding/json"
 	"log"
 	"net/http"
 	"os"
@@ -13,8 +14,6 @@ import (
 )
 
 func main() {
-	// repo := repository.NewInMemoryRepo()
-
 	redisURL := os.Getenv("REDIS_URL")
 	if redisURL == "" {
 		redisURL = "redis://localhost:6379"
@@ -40,8 +39,6 @@ func main() {
 		http.ServeFile(w, r, "index.html")
 	})
 
-	log.Println("Server started on :8000")
-
 	var jwtSecret = []byte("my-secret-key")
 	http.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
@@ -65,6 +62,31 @@ func main() {
 
 		w.Write([]byte(tokenString))
 	})
+
+	http.HandleFunc("/document", func(w http.ResponseWriter, r *http.Request) {
+		tokenString := r.URL.Query().Get("token")
+		if tokenString == "" {
+			http.Error(w, "Missing token", http.StatusUnauthorized)
+			return
+		}
+
+		roomID := r.URL.Query().Get("room")
+		if roomID == "" {
+			http.Error(w, "Room ID required", http.StatusBadRequest)
+			return
+		}
+
+		doc, err := editorService.GetDocument(roomID)
+		if err != nil {
+			http.Error(w, "Failed to get doc", http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(doc)
+	})
+
+	log.Println("Server started on :8000")
 	err = http.ListenAndServe(":8000", nil)
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)

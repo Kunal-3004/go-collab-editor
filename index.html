@@ -29,7 +29,7 @@
 
     async function start() {
         const randomUser = "User-" + Math.floor(Math.random() * 1000);
-        const response = await fetch(`/login?user=${randomUser}`); 
+        const response = await fetch(`/login?user=${randomUser}`);
         const token = await response.text();
         
         const base64Url = token.split('.')[1];
@@ -37,7 +37,39 @@
         const payload = JSON.parse(window.atob(base64));
         MY_ID = payload.user_id;
 
+
+        await loadDocumentHistory(token);
+
+
         connectWebSocket(token);
+    }
+
+
+    async function loadDocumentHistory(token) {
+        try {
+            const res = await fetch(`/document?room=${ROOM_ID}&token=${token}`);
+            const doc = await res.json();
+            
+            if (doc.Operations && doc.Operations.length > 0) {
+                doc.Operations.sort((a, b) => a.position - b.position);
+                let fullText = "";
+    
+                for (const op of doc.Operations) {
+                     if (op.type === "INSERT") {
+               
+                         const pos = op.position;
+                    
+                         fullText = fullText.slice(0, pos) + op.value + fullText.slice(pos);
+                     } else if (op.type === "DELETE") {
+                         const pos = op.position;
+                         fullText = fullText.slice(0, pos) + fullText.slice(pos + 1);
+                     }
+                }
+                editor.value = fullText;
+            }
+        } catch (err) {
+            console.error("Could not load history:", err);
+        }
     }
 
     function connectWebSocket(token) {

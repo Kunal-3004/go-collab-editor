@@ -42,3 +42,7 @@ func (s *EditorService) ProcessEdit(roomID string, op domain.Operation) error {
 
 	return nil
 }
+
+func (s *EditorService) GetDocument(roomID string) (*domain.Document, error) {
+	return s.repo.GetByID(roomID)
+}
