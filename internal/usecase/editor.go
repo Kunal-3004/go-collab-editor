@@ -3,6 +3,7 @@ package usecase
 import (
 	"collab-editor/internal/domain"
 	"log"
+	"sync"
 )
 
 type Repository interface {
@@ -17,13 +18,20 @@ type Publisher interface {
 type EditorService struct {
 	repo      Repository
 	publisher Publisher
+	mu        sync.Mutex
 }
 
 func NewEditorService(r Repository, p Publisher) *EditorService {
-	return &EditorService{repo: r, publisher: p}
+	return &EditorService{
+		repo:      r,
+		publisher: p,
+	}
 }
 
 func (s *EditorService) ProcessEdit(roomID string, op domain.Operation) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	doc, err := s.repo.GetByID(roomID)
 	if err != nil {
 		doc = domain.NewDocument(roomID)
@@ -44,5 +52,8 @@ func (s *EditorService) ProcessEdit(roomID string, op domain.Operation) error {
 }
 
 func (s *EditorService) GetDocument(roomID string) (*domain.Document, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	return s.repo.GetByID(roomID)
 }
