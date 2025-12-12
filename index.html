@@ -16,8 +16,13 @@
         #app-screen { display: none; width: 80%; max-width: 800px; margin-top: 20px; }
         
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .header-left { display: flex; align-items: center; gap: 10px; }
+        
         #status { padding: 5px 10px; color: white; background: #dc3545; border-radius: 4px; font-size: 14px; }
         
+        .btn-close { padding: 5px 10px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; }
+        .btn-close:hover { background: #5a6268; }
+
         textarea { width: 100%; height: 500px; border: 1px solid #ccc; border-radius: 5px; padding: 15px; font-size: 16px; font-family: 'Courier New', Courier, monospace; resize: none; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
 
         .footer { margin-top: 10px; display: flex; justify-content: flex-end; }
@@ -38,8 +43,11 @@
 
     <div id="app-screen">
         <div class="header">
-            <h3>📄 Room: <span id="displayRoom"></span></h3>
-            <span id="status">Disconnected</span>
+            <div class="header-left">
+                <h3>📄 Room: <span id="displayRoom"></span></h3>
+                <span id="status">Disconnected</span>
+            </div>
+            <button class="btn-close" onclick="closeRoom()">❌ Close Room</button>
         </div>
 
         <textarea id="editor" placeholder="Start typing..."></textarea>
@@ -62,6 +70,17 @@
         const status = document.getElementById("status");
         const displayRoom = document.getElementById("displayRoom");
 
+        window.onload = function() {
+            const savedUser = localStorage.getItem("collab_username");
+            const savedRoom = localStorage.getItem("collab_room");
+
+            if (savedUser && savedRoom) {
+                document.getElementById("usernameInput").value = savedUser;
+                document.getElementById("roomInput").value = savedRoom;
+                handleLogin();
+            }
+        };
+
         async function handleLogin() {
             const username = document.getElementById("usernameInput").value.trim();
             const room = document.getElementById("roomInput").value.trim();
@@ -70,6 +89,9 @@
                 alert("Please enter both Username and Room Name");
                 return;
             }
+
+            localStorage.setItem("collab_username", username);
+            localStorage.setItem("collab_room", room);
 
             ROOM_ID = room;
             displayRoom.innerText = ROOM_ID;
@@ -93,7 +115,19 @@
             } catch (err) {
                 console.error(err);
                 alert("Error logging in. Check console.");
+                closeRoom();
             }
+        }
+-
+        function closeRoom() {
+            localStorage.removeItem("collab_username");
+            localStorage.removeItem("collab_room");
+
+            if (ws) {
+                ws.close();
+            }
+
+            location.reload();
         }
 
         async function loadDocumentHistory(token) {
