@@ -23,6 +23,10 @@ func main() {
 		websocket.ServeWs(hub, editorService, w, r)
 	})
 
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "index.html")
+	})
+
 	log.Println("Server started on :8000")
 
 	var jwtSecret = []byte("my-secret-key")

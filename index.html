@@ -29,7 +29,7 @@
 
         async function start() {
             const randomUser = "User-" + Math.floor(Math.random() * 1000);
-            const response = await fetch(`http://localhost:8000/login?user=${randomUser}`);
+            const response = await fetch(`/login?user=${randomUser}`);
             const token = await response.text();
             
             console.log("Got Token:", token);
@@ -44,7 +44,10 @@
         }
 
         function connectWebSocket(token) {
-            const WS_URL = `ws://localhost:8000/ws?room=${ROOM_ID}&token=${token}`;
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const host = window.location.host;
+    
+            const WS_URL = `${protocol}//${host}/ws?room=${ROOM_ID}&token=${token}`;
             ws = new WebSocket(WS_URL);
 
             ws.onopen = () => {
