@@ -77,7 +77,7 @@ graph TD
 
 ### 1. Clone the Repository
 ```bash
-git clone [https://github.com/Kunal-3004/go-collab-editor.git](https://github.com/Kunal-3004/go-collab-editor.git)
+git clone [https://github.com/Kunal-3004/](https://github.com/Kunal-3004/)
 cd go-collab-editor
 ```
 
