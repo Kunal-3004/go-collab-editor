@@ -27,9 +27,19 @@
     const editor = document.getElementById("editor");
     const status = document.getElementById("status");
 
+    function getStoredUser() {
+        let user = localStorage.getItem("collab_user_id");
+        if (!user) {
+            user = "User-" + Math.floor(Math.random() * 1000);
+            localStorage.setItem("collab_user_id", user);
+        }
+        return user;
+    }
+
     async function start() {
-        const randomUser = "User-" + Math.floor(Math.random() * 1000);
-        const response = await fetch(`/login?user=${randomUser}`);
+        const user = getStoredUser();
+        
+        const response = await fetch(`/login?user=${user}`);
         const token = await response.text();
         
         const base64Url = token.split('.')[1];
@@ -37,13 +47,10 @@
         const payload = JSON.parse(window.atob(base64));
         MY_ID = payload.user_id;
 
-
         await loadDocumentHistory(token);
-
 
         connectWebSocket(token);
     }
-
 
     async function loadDocumentHistory(token) {
         try {
@@ -51,18 +58,17 @@
             const doc = await res.json();
             
             if (doc.Operations && doc.Operations.length > 0) {
-                doc.Operations.sort((a, b) => a.position - b.position);
+                
                 let fullText = "";
-    
                 for (const op of doc.Operations) {
                      if (op.type === "INSERT") {
-               
                          const pos = op.position;
-                    
-                         fullText = fullText.slice(0, pos) + op.value + fullText.slice(pos);
+                         const safePos = Math.min(pos, fullText.length);
+                         fullText = fullText.slice(0, safePos) + op.value + fullText.slice(safePos);
                      } else if (op.type === "DELETE") {
                          const pos = op.position;
-                         fullText = fullText.slice(0, pos) + fullText.slice(pos + 1);
+                         const safePos = Math.min(pos, fullText.length);
+                         fullText = fullText.slice(0, safePos) + fullText.slice(safePos + 1);
                      }
                 }
                 editor.value = fullText;
@@ -86,17 +92,16 @@
 
         ws.onmessage = (event) => {
             const op = JSON.parse(event.data);
-            
             if (op.clientId === MY_ID) return; 
 
+            const text = editor.value;
+       
+            const pos = Math.min(op.position, text.length);
+
             if (op.type === "INSERT") {
-                const text = editor.value;
-                const pos = op.position;
                 editor.value = text.slice(0, pos) + op.value + text.slice(pos);
             } 
             else if (op.type === "DELETE") {
-                const text = editor.value;
-                const pos = op.position;
                 editor.value = text.slice(0, pos) + text.slice(pos + 1);
             }
         };
@@ -114,7 +119,6 @@
             };
             ws.send(JSON.stringify(op));
         }
-        
         else if (e.inputType === "deleteContentBackward") {
             const op = {
                 type: "DELETE",
