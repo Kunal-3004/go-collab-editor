@@ -38,3 +38,14 @@ graph TD
     Service --> Repo
     Hub -.->|Broadcast Updates| ClientA
     Hub -.->|Broadcast Updates| ClientB
+
+🚀 Features
+Real-time Synchronization: Uses WebSockets for low-latency, bi-directional communication.
+
+Concurrency Safe: Implements sync.Mutex and Channels to handle multiple users editing the same document simultaneously without race conditions.
+
+Clean Architecture: Code is modular (domain, usecase, repository, delivery), making it testable and scalable.
+
+Conflict Resolution: (Basic) Handles operation merging to ensure eventual consistency.
+
+Room Support: Users can join specific document rooms (e.g., ?room=doc1).
