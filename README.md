@@ -15,8 +15,8 @@ This project follows **Clean Architecture** principles to separate business logi
 
 ```mermaid
 graph TD
-    ClientA[User A (Frontend)] <-->|WebSocket| Handler
-    ClientB[User B (Frontend)] <-->|WebSocket| Handler
+    ClientA["User A (Frontend)"] <-->|WebSocket| Handler
+    ClientB["User B (Frontend)"] <-->|WebSocket| Handler
     
     subgraph "Delivery Layer"
         Handler[WebSocket Handler]
@@ -25,11 +25,11 @@ graph TD
     
     subgraph "Domain & UseCase"
         Service[Editor Service]
-        Logic[CRDT / Operational Logic]
+        Logic["CRDT / Operational Logic"]
     end
     
     subgraph "Repository"
-        Repo[(In-Memory / Redis Storage)]
+        Repo[("In-Memory / Redis Storage")]
     end
 
     Handler --> Hub
