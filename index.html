@@ -14,7 +14,12 @@
 <body>
 
     <div class="container">
-        <h2>📄 My Go Docs <span id="status">Disconnected</span></h2>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h2>📄 My Go Docs <span id="status">Disconnected</span></h2>
+                <button onclick="downloadFile()" style="padding: 10px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                    💾 Save as .txt
+                </button>
+        </div>
         <p>Open this file in two different tabs (or browsers) to test collaboration.</p>
         <textarea id="editor" placeholder="Start typing..."></textarea>
     </div>
@@ -26,6 +31,10 @@
 
     const editor = document.getElementById("editor");
     const status = document.getElementById("status");
+
+
+    
+
 
     function getStoredUser() {
         let user = localStorage.getItem("collab_user_id");
@@ -128,6 +137,21 @@
             ws.send(JSON.stringify(op));
         }
     });
+
+    function downloadFile() {
+        const text = editor.value;
+        const blob = new Blob([text], { type: "text/plain" });
+        
+        const anchor = document.createElement("a");
+        anchor.href = URL.createObjectURL(blob);
+        anchor.download = "my-document.txt"; 
+        
+        document.body.appendChild(anchor);
+        anchor.click();
+        
+        document.body.removeChild(anchor);
+        URL.revokeObjectURL(anchor.href);
+    }
 
     start();
 </script>
