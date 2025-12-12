@@ -2,7 +2,6 @@ package domain
 
 import (
 	"errors"
-	"sort"
 )
 
 type OpType string
@@ -37,10 +36,6 @@ func (d *Document) ApplyOperation(op Operation) error {
 	}
 
 	d.Operations = append(d.Operations, op)
-
-	sort.Slice(d.Operations, func(i, j int) bool {
-		return d.Operations[i].Position < d.Operations[j].Position
-	})
 
 	return nil
 }
