@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>GoCollab Editor</title>
     <style>
+        /* BASE STYLES */
         body { 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
             background: #f4f4f9; 
@@ -16,6 +17,7 @@
             overflow: hidden; 
         }
 
+        /* --- LOGIN SCREEN --- */
         #login-screen { 
             display: none; 
             flex-direction: column; 
@@ -65,6 +67,7 @@
             margin-top: 10px;
         }
 
+        /* --- EDITOR SCREEN --- */
         #app-screen { 
             display: none; 
             width: 95%; 
@@ -74,6 +77,7 @@
             box-sizing: border-box;
         }
         
+        /* HEADER */
         .header { 
             display: flex; 
             justify-content: space-between; 
@@ -110,12 +114,13 @@
             width: 10px;
             height: 10px;
             border-radius: 50%;
-            background-color: #dc3545; 
+            background-color: #dc3545;
             transition: background-color 0.3s ease;
         }
+
         #status.connected::before {
             background-color: #28a745;
-            box-shadow: 0 0 5px #28a745; 
+            box-shadow: 0 0 5px #28a745;
         }
 
         .btn-close { 
@@ -166,6 +171,7 @@
             justify-content: center;
             gap: 8px;
             box-shadow: 0 4px 6px rgba(40, 167, 69, 0.2);
+            transition: background-color 0.3s ease;
         }
 
         .btn-save:disabled {
@@ -206,7 +212,7 @@
         <textarea id="editor" placeholder="Type here..."></textarea>
 
         <div class="footer">
-            <button class="btn-save" onclick="downloadFile()">
+            <button id="saveBtn" class="btn-save" onclick="downloadFile()" disabled>
                 📥 Save to Device
             </button>
         </div>
@@ -217,14 +223,22 @@
         let MY_ID = ""; 
         let ws;
 
-        const loginScreen = document.getElementById("login-screen");
-        const appScreen = document.getElementById("app-screen");
-        const editor = document.getElementById("editor");
-        const status = document.getElementById("status");
-        const displayRoom = document.getElementById("displayRoom");
-        const saveBtn = document.getElementById("saveBtn")
+
+        let loginScreen, appScreen, editor, status, displayRoom, saveBtn;
 
         window.onload = function() {
+         
+            loginScreen = document.getElementById("login-screen");
+            appScreen = document.getElementById("app-screen");
+            editor = document.getElementById("editor");
+            status = document.getElementById("status");
+            displayRoom = document.getElementById("displayRoom");
+            saveBtn = document.getElementById("saveBtn");
+
+            if (editor) {
+                editor.addEventListener("input", handleInput);
+            }
+
             const savedUser = localStorage.getItem("collab_username");
             const savedRoom = localStorage.getItem("collab_room");
 
@@ -243,6 +257,7 @@
         };
 
         function updateSaveButton() {
+            if (!saveBtn || !editor) return; 
             if (editor.value.trim().length > 0) {
                 saveBtn.disabled = false;
             } else {
@@ -301,32 +316,37 @@
 
             ROOM_ID = "";
             MY_ID = "";
-            editor.value = "";
+            if (editor) editor.value = "";
             document.getElementById("usernameInput").value = "";
             document.getElementById("roomInput").value = "";
 
-            appScreen.style.display = "none";
-            loginScreen.style.display = "flex";
+            if (appScreen) appScreen.style.display = "none";
+            if (loginScreen) loginScreen.style.display = "flex";
 
-            status.innerText = "Disconnected";
-            status.classList.remove("connected");
+            if (status) {
+                status.innerText = "Disconnected";
+                status.classList.remove("connected");
+            }
+            
             updateSaveButton();
         }
 
         async function loadDocumentHistory(token) {
             try {
+                console.log("Fetching history...");
                 const res = await fetch(`/document?room=${ROOM_ID}&token=${token}`);
                 const doc = await res.json();
+                console.log("History loaded:", doc);
                 
                 const ops = doc.operations || doc.Operations || [];
-                console.log("Found Operations:", ops.length); 
 
                 if (ops.length > 0) {
                     let fullText = "";
                     for (const op of ops) {
                          const type = op.type || op.Type;
                          const value = op.value || op.Value || "";
-                         const position = (op.position !== undefined) ? op.position : op.Position;
+                         let position = op.position;
+                         if (position === undefined) position = op.Position;
 
                          if (type === "INSERT") {
                              const pos = Math.min(position, fullText.length);
@@ -336,7 +356,8 @@
                              fullText = fullText.slice(0, pos) + fullText.slice(pos + 1);
                          }
                     }
-                    editor.value = fullText;
+                    if (editor) editor.value = fullText;
+                    updateSaveButton();
                 }
             } catch (err) {
                 console.error("Could not load history:", err);
@@ -351,12 +372,14 @@
             ws = new WebSocket(WS_URL);
 
             ws.onopen = () => {
-                status.innerText = "Connected as " + MY_ID;
-                status.classList.add("connected");
+                if (status) {
+                    status.innerText = "Connected as " + MY_ID;
+                    status.classList.add("connected");
+                }
             };
 
             ws.onclose = () => {
-                if (appScreen.style.display === "block") {
+                if (appScreen && appScreen.style.display === "block" && status) {
                     status.innerText = "Disconnected";
                     status.classList.remove("connected");
                 }
@@ -377,36 +400,42 @@
                 else if (type === "DELETE") {
                     editor.value = text.slice(0, pos) + text.slice(pos + 1);
                 }
+                
                 updateSaveButton();
             };
         }
 
-        editor.addEventListener("input", (e) => {
-            updateSaveButton();
+        function handleInput(e) {
+            updateSaveButton(); 
+
             if (!ws || ws.readyState !== WebSocket.OPEN) return;
 
+            let op = null;
             if (e.inputType === "insertText" || e.inputType === "insertLineBreak") {
                 const char = e.data || "\n"; 
-                const op = {
+                op = {
                     type: "INSERT",
                     position: editor.selectionStart - 1, 
                     value: char
                 };
-                ws.send(JSON.stringify(op));
             }
             else if (e.inputType === "deleteContentBackward") {
-                const op = {
+                op = {
                     type: "DELETE",
                     position: editor.selectionStart, 
                     value: ""
                 };
+            }
+
+            if (op) {
                 ws.send(JSON.stringify(op));
             }
-        });
+        }
 
         function downloadFile() {
             const text = editor.value;
-            if(text.trim().length===0) return;
+            if (text.trim().length === 0) return;
+
             const blob = new Blob([text], { type: "text/plain" });
             const anchor = document.createElement("a");
             anchor.href = URL.createObjectURL(blob);
