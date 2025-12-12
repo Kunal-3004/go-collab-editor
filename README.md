@@ -51,6 +51,7 @@ graph TD
 
 | Category | Technology |
 | :--- | :--- |
+| **Frontend** | ![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=flat-square&logo=html5&logoColor=white) |
 | **Backend** | ![Go](https://img.shields.io/badge/Go-00ADD8?style=flat-square&logo=go&logoColor=white) |
 | **Protocol** | ![WebSockets](https://img.shields.io/badge/WebSockets-000000?style=flat-square&logo=socket.io&logoColor=white) |
 | **Database** | ![Redis](https://img.shields.io/badge/Redis-DC382D?style=flat-square&logo=redis&logoColor=white) |

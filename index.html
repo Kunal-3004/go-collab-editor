@@ -168,6 +168,12 @@
             box-shadow: 0 4px 6px rgba(40, 167, 69, 0.2);
         }
 
+        .btn-save:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
         @media (max-width: 600px) {
             .header { padding: 8px; }
             h3 { font-size: 14px; }
@@ -234,6 +240,14 @@
                 appScreen.style.display = "none";
             }
         };
+
+        function updateSaveButton() {
+            if (editor.value.trim().length > 0) {
+                saveBtn.disabled = false;
+            } else {
+                saveBtn.disabled = true;
+            }
+        }
 
         async function handleLogin() {
             const username = document.getElementById("usernameInput").value.trim();
@@ -360,10 +374,12 @@
                 else if (type === "DELETE") {
                     editor.value = text.slice(0, pos) + text.slice(pos + 1);
                 }
+                updateSaveButton();
             };
         }
 
         editor.addEventListener("input", (e) => {
+            updateSaveButton();
             if (!ws || ws.readyState !== WebSocket.OPEN) return;
 
             if (e.inputType === "insertText" || e.inputType === "insertLineBreak") {
@@ -387,6 +403,7 @@
 
         function downloadFile() {
             const text = editor.value;
+            if(text.trim().length===0) return;
             const blob = new Blob([text], { type: "text/plain" });
             const anchor = document.createElement("a");
             anchor.href = URL.createObjectURL(blob);
