@@ -87,7 +87,7 @@ go mod tidy
 ```
 ### 3. Run the Server
 ```bash
-go run cmd/server/main.go
+go run server/main.go
 ```
 You should see a message: Server started on :8000
 
